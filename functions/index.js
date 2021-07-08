@@ -11,7 +11,7 @@ var config = {
 firebase.initializeApp(config)
 
 const accountSid = 'ACe4789c3d43bd020626b5dfca34a4fb08'
-const authToken = '08f036f7537b1a445674ede83fdfdb6c'
+const authToken = '9ea4def143de17e5a51d0cba2861675e'
 const client = require('twilio')(accountSid, authToken)
 const BitlyClient = require('bitly').BitlyClient
 const bitly = new BitlyClient('ba758c7d1927eb82aa87b23740becb7cc50b3bac')
@@ -117,26 +117,24 @@ exports.UpdatingDataBase = functions.database
           .val()
           .toString()
         //  console.log(price);
-        income = price
-        EmployeeEarningRef.update({ income: income })
+        // income = price
+        // EmployeeEarningRef.update({ income: income })
 
         return bitly
           .shorten(imageURL1)
           .then((response) => {
-            const message = {
-              from: 'whatsapp:+18154066941',
-              
-              body: `*Greeting from CMoTo!!*😊
-              Your Car 🚘{{1}}🚘 has been cleaned✨ and sanitised💦!!
-              
-              👇Click below to see your car👇
-               ${response.link}`,
-              to: `whatsapp:${sendTo}`,
-            }
+const message = {
+    from: 'whatsapp:+18154066941',
+    body: `*Greeting from CMoTo!!*😊
+    Your Car 🚘${CarNumberToBeRemoved}🚘  has been cleaned✨ and sanitised💦!!
+    👇Click below to see your car👇
+    ${response.link}`,
+    to: `whatsapp:+919310331578`,
+}
             console.log(imageURL1)
 
             const mssg = client.messages.create(message)
-            console.log('message ' + mssg)
+            console.log(mssg)
 
             return null
           })
@@ -184,14 +182,14 @@ exports.UpdatingDataBaseForInterior = functions.database
       console.log('cars to be removed = ' + CarNumberToBeRemoved);
       console.log('daysCar = ' + daysCar);
       ref.update({ [daysCar]: todaysCarsLeft })
-      var CarCatgory = Employee.Working_Address
+      // var CarCatgory = Employee.Working_Address
       var sendTo = Employee.sendTo
-      firebase
-        .database()
-        .ref('InteriorEmployees/' + CarCatgory + '/' + employeeId)
-        .update({ [daysCar]: todaysCarsLeft })
+      // firebase
+      //   .database()
+      //   .ref('InteriorEmployees/' + CarCatgory + '/' + employeeId)
+      //   .update({ [daysCar]: todaysCarsLeft })
 
-      var EmployeeEarningRef = ref.child('Work History').child(getTodayDate())
+      var EmployeeEarningRef = ref.child('Interior Work History').child(getTodayDate())
       EmployeeEarningRef.once('value', async (snapshot) => {
         //  console.log(snapshot.val());
 
@@ -205,15 +203,14 @@ exports.UpdatingDataBaseForInterior = functions.database
         return bitly
           .shorten(imageURL1)
           .then((response) => {
-            const message = {
-              from: 'whatsapp:+18154066941',
-              body: `*Greeting from CMoTo!!*😊
-              Your Car 🚘{{1}}🚘 has been cleaned✨ and sanitised💦!!
-              
-              👇Click below to see your car👇
-               ${response.link}`,
-              to: `whatsapp:${sendTo}`,
-            }
+const message = {
+    from: 'whatsapp:+18154066941',
+    body: `*Greeting from CMoTo!!*😊
+    Your Car 🚘${CarNumberToBeRemoved}🚘  has been cleaned✨ and sanitised💦!!
+    👇Click below to see your car👇
+    ${response.link}`,
+    to: `whatsapp:+919310331578`,
+}
             console.log(imageURL1)
 
             const mssg = client.messages.create(message)
@@ -231,7 +228,7 @@ exports.UpdatingDataBaseForInterior = functions.database
   })
 
 var areaname = []
-var linkedUsers = []
+var linkedUsers = new Map();
 var clusterName = []
 var employeeIdArray
 var Employes
@@ -251,6 +248,18 @@ exports.scheduledFunctionForSettingCars = functions.https.onRequest(
           .ref('Car Status/' + carNums[i])
           .update({ status: 'In waiting' })
         database.ref('Car Status/' + carNums[i]).update({ timeStamp: '0' })
+      }
+    })
+
+    firebase
+    .database()
+    .ref('Employee')
+    .once('value',(snap)=>{
+
+      var employees = Object.keys(snap.val())
+      for(let i in employees){
+        database.ref(`Employee/${employees[i]}/status`).set('free')
+        database.ref(`Employee/${employees[i]}/working on`).set('')
       }
     })
 
@@ -443,22 +452,23 @@ async function setTodaysCars() {
 function setInteriorEmployeeTodaysCars(Employes) {
   for (let EmployeeId in Employes) {
     var employeId = Employes[EmployeeId]
-    // console.log(employeId)
-    // areaname.push(employeId.Working_Address)
+    console.log(EmployeeId)
+    areaname.push(employeId.Working_Address)
     const linkedWith = employeId.linkedWith.toString().split(',')
-    linkedUsers.push(linkedWith[0])
-    linkedUsers.push(linkedWith[1])
+    linkedUsers[EmployeeId + '0'] = linkedWith[0]
+    linkedUsers[EmployeeId + '1'] = linkedWith[1]
   }
 
   return null
 }
 
 async function setInteriorTodaysCars() {
-  // console.log('second start : ')
+  console.log('second start : ')
   var i = 0
   var j = 0
   for (k = 0; k < employeeIdArray.length; k++) {
-    var carsRef = database.ref(`Employee/${linkedUsers[2 * k]}/Cluster`)
+    var carsRef = database.ref(`Employee/${linkedUsers[employeeIdArray[i]+'0']}/Cluster`)
+    console.log(linkedUsers)
     /* eslint-disable no-await-in-loop */
     await carsRef.once(
       'value',
@@ -471,9 +481,9 @@ async function setInteriorTodaysCars() {
           .filter((el) => {
             return el !== ''
           })
-        // console.log('c=' + carsNumbers)
+        console.log('c=' + carsNumbers)
         var carsRef1 = database.ref(
-          `Employee/${linkedUsers[2 * k + 1]}/Cluster`
+          `Employee/${linkedUsers[employeeIdArray[i]+'1']}/Cluster`
         )
         await carsRef1.once('value', async (snap1) => {
           var carsnum1 = snap1.val().toString()
@@ -514,7 +524,7 @@ async function setInteriorTodaysCars() {
             console.log(err)
           }
 
-          console.log(carWithDate)
+          console.log('last : ' + carWithDate)
 
           carsNumber = []
           carWithDate.map((el) => {
